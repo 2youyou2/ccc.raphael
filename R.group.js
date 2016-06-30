@@ -8,7 +8,7 @@ cc.Class({
         this.paths = [];
 
         if (!this.ctx) {
-            this.ctx = new cc.GraphicsNode();
+            this.ctx = new _ccsg.GraphicsNode();
             this.node._sgNode.addChild(this.ctx);
         }
     },

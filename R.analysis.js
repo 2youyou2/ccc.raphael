@@ -40,12 +40,17 @@ function tesselateBezier (x1, y1, x2, y2, x3, y3, x4, y4, level, points) {
 }
 
 
-function analysisPath(path) {
+function analysisPath (path) {
     var cmds = path._commands;
-    var points = [];
     var x, y;
-
     var subPoints;
+
+    if (cmds.points) {
+        return;
+    }
+    
+    var points = [];
+
     for (var i = 0, ii = cmds.length; i < ii; i++) {
         var cmd = cmds[i];
         var c = cmd[0];
@@ -72,9 +77,12 @@ function analysisPath(path) {
 
     cmds.points = points;
 
+
     var totalLength = 0;
     var lastx, lasty;
     var dx, dy;
+    var minx = 10e7, miny = 10e7, 
+        maxx = -10e7, maxy = -10e7;
 
     for (var i = 0, ii = points.length / 2; i < ii; i++) {
         subPoints = points[i];
@@ -82,6 +90,12 @@ function analysisPath(path) {
         for (var j = 0, jj = subPoints.length / 2; j < jj; j++) {
             x = subPoints[j*2];
             y = subPoints[j*2 + 1];
+
+            if (x < minx) minx = x;
+            else if (x > maxx) maxx = x;
+
+            if (y < miny) miny = y;
+            else if (y > maxy) maxy = y;
 
             if (j === 0) {
                 lastx = x;
@@ -99,6 +113,7 @@ function analysisPath(path) {
     }
 
     cmds.totalLength = totalLength;
+    cmds.boundingBox = cc.rect(minx, miny, maxx - minx, maxy - miny);
 }
 
 module.exports = {

@@ -15,7 +15,7 @@ var drawer = {
 
 var selectedColor = cc.color(0,157,236);
 
-var GraphicsNode = cc.GraphicsNode;
+var GraphicsNode = _ccsg.GraphicsNode;
 var LineCap      = cc.Graphics.LineCap;
 var LineJoin     = cc.Graphics.LineJoin;
 
@@ -170,7 +170,7 @@ var Path = cc.Class({
                 return this._dashArray;
             },
             set: function (value) {
-                if (Array.isArray(value)) {
+                if (!Array.isArray(value)) {
                     return;
                 }
                 this._dashArray = value;
@@ -184,6 +184,10 @@ var Path = cc.Class({
             notify: function () {
                 if (this.group && this._dirty) {
                     this.group._dirty = true;
+                }
+
+                if (this._commands) {
+                    this._commands.points = undefined;
                 }
             }
         }
@@ -326,6 +330,14 @@ var Path = cc.Class({
         return this._commands.totalLength;
     },
 
+    getBoundingBox: function () {
+        if (this._commands.boundingBox === undefined) {
+            analysisPath(this);
+        }
+
+        return this._commands.boundingBox;
+    },
+
     ////////////////////////////////////////////////////////
     smooth: function () {
         var knots = [];
@@ -410,10 +422,6 @@ var Path = cc.Class({
     drawCommands: function () {
         var commands = this._commands;
         var ctx = this.ctx;
-
-        if (!this.group) {
-            ctx.clear();
-        }
 
         for (var i = 0, ii = commands.length; i < ii; i++) {
             var cmd = commands[i];
@@ -533,22 +541,38 @@ var Path = cc.Class({
             this.stepAnimate(this._time);
         }
 
-        if ( this._commands.length === 0 || !this._dirty || !(this.group && this.group._dirty)) {
+        if ( this._commands.length === 0 || !this._dirty || (this.group && !this.group._dirty)) {
             return;
         }
 
         this.applyStyle();
-        this.drawCommands();
 
-        if (this._fillColor) this.ctx.fill();
-
-        if (this._strokeColor) {
-            if (this.dashArray.length > 0) {
-                this.ctx.beginPath();
-                drawDashPath(this, this.ctx, this.dashArray, this.dashOffset);
-            }
-            this.ctx.stroke();
+        if (!this.group) {
+            this.ctx.clear();
         }
+
+        if (this.dashArray.length > 0) {
+            if (this._fillColor) {
+                this.drawCommands();
+                this.ctx.fill();
+            }
+
+            if (this._strokeColor) {
+                this.ctx.beginPath();
+                drawDashPath(this, this.ctx, this.dashArray, this.dashOffset);    
+                this.ctx.stroke();
+            }
+        }
+        else {
+            this.drawCommands();
+
+            if (this._fillColor) this.ctx.fill();
+            if (this._strokeColor) this.ctx.stroke();
+        }
+
+        // var boundingBox = this.getBoundingBox();
+        // this.ctx.rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+        // this.ctx.stroke();
 
         if ( this.selected ) this.drawHandles();
 
