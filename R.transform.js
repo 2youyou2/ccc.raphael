@@ -5,6 +5,9 @@ var Transform = {
         _scale: cc.v2(1, 1),
         _position: cc.v2(0,0),
         _rotation: 0,
+        
+        _flipX: false,
+        _flipY: false,
 
         _transform: {
             default: function () {
@@ -74,12 +77,38 @@ var Transform = {
             }
         },
 
+
+        flipX: {
+            get: function () {
+                return this._flipX;
+            },
+            set: function (value) {
+                if (this._flipX === value) {
+                    return;
+                }
+                this._flipX = value;
+                this._transformDirty = true;
+            }
+        },
+
+        flipY: {
+            get: function () {
+                return this._flipY;
+            },
+            set: function (value) {
+                if (this._flipY === value) {
+                    return;
+                }
+                this._flipY = value;
+                this._transformDirty = true;
+            }
+        },
     },
 
     updateTransform: function (parentTransformDirty) {
         if (this._transformDirty || parentTransformDirty) {
-            var scaleX = this._scale.x;
-            var scaleY = this._scale.y;
+            var scaleX = this.flipX ? -this._scale.x : this._scale.x;
+            var scaleY = this.flipY ? -this._scale.y : this._scale.y;
             var positionX = this._position.x;
             var positionY = this._position.y;
             var rotation = this._rotation;

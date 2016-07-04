@@ -33,6 +33,8 @@ var Svg = {
 
         var svg = $('svg')[0];
         this._parseNode(svg, this);
+
+        this.flipY = true;
     },
 
     _parseNode: function (node, parent) {
