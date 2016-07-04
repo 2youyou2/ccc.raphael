@@ -132,12 +132,4 @@ var Transform = {
     }
 };
 
-module.exports = function (clsDefine) {
-    var properties = clsDefine.properties || {};
-    cc.js.mixin(properties, Transform.properties);
-
-    clsDefine.properties = properties;
-    clsDefine.updateTransform = Transform.updateTransform;
-
-    return clsDefine;
-};
+module.exports = Transform;

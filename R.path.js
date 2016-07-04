@@ -6,7 +6,8 @@ var path2curve = require('./R.curve').path2curve;
 var drawDashPath = require('./R.dash').drawDashPath;
 var analysisPath = require('./R.analysis').analysisPath;
 
-var makeTrasform = require('./R.transform');
+var Trasform = require('./R.transform');
+var Style = require('./R.style');
 
 var drawer = {
     M: 'moveTo',
@@ -21,122 +22,10 @@ var GraphicsNode = _ccsg.GraphicsNode;
 var LineCap      = cc.Graphics.LineCap;
 var LineJoin     = cc.Graphics.LineJoin;
 
-var Path = cc.Class(makeTrasform({
+var PathDefine = {
     extends: cc.Component,
 
     properties: {
-        _lineWidth: 1,
-        _strokeColor: cc.Color.BLACK,
-        _fillColor: cc.Color.WHITE,
-        _lineJoin: LineJoin.BEVEL,
-        _lineCap: LineCap.BUTT,
-        _miterLimit: 2,
-
-        _dashOffset: 0,
-        _dashArray: {
-            default: [],
-            type: Number
-        },
-
-        lineWidth: {
-            get: function () {
-                return this._lineWidth;
-            },
-            set: function (value) {
-                this._lineWidth = value;
-                if (this.ctx) {
-                    this.ctx.lineWidth = value;
-                }
-            }
-        },
-
-        lineJoin: {
-            get: function () {
-                return this._lineJoin;
-            },
-            set: function (value) {
-                this._lineJoin = value;
-                if (this.ctx) {
-                    this.ctx.lineJoin = value;
-                }
-            },
-            type: LineJoin
-        },
-
-        lineCap: {
-            get: function () {
-                return this._lineCap;
-            },
-            set: function (value) {
-                this._lineCap = value;
-                if (this.ctx) {
-                    this.ctx.lineCap = value;
-                }
-            },
-            type: LineCap
-        },
-
-        strokeColor: {
-            get: function () {
-                return this._strokeColor;
-            },
-            set: function (value) {
-                this._strokeColor = value;
-                if (value && this.ctx) {
-                    this.ctx.strokeColor = value;
-                }
-            }
-        },
-
-        fillColor: {
-            get: function () {
-                return this._fillColor;
-            },
-            set: function (value) {
-                this._fillColor = value;
-                if (value && this.ctx) {
-                    this.ctx.fillColor = value;
-                }
-            }
-        },
-
-        miterLimit: {
-            get: function () {
-                return this._miterLimit;
-            },
-            set: function (value) {
-                this._miterLimit = value;
-                if (this.ctx) {
-                    this.ctx.miterLimit = value;
-                }
-            }
-        },
-
-        dashOffset: {
-            get: function () {
-                return this._dashOffset;
-            },
-            set: function (value) {
-                if (this._dashOffset === value) {
-                    return;
-                }
-                this._dashOffset = value;
-                this._dirty = true;
-            }
-        },
-        dashArray: {
-            get: function () {
-                return this._dashArray;
-            },
-            set: function (value) {
-                if (!Array.isArray(value)) {
-                    return;
-                }
-                this._dashArray = value;
-                this._dirty = true;
-            }
-        },
-
         _dirty: {
             default: true,
             serializable: false,
@@ -150,18 +39,6 @@ var Path = cc.Class(makeTrasform({
                 }
             }
         }
-    },
-
-    applyStyle: function () {
-        var ctx = this.ctx;
-        ctx.lineWidth = this._lineWidth;
-        ctx.lineJoin = this._lineJoin;
-        ctx.lineCap = this._lineCap;
-
-        if (this._strokeColor)
-            ctx.strokeColor = this._strokeColor;
-        if (this._fillColor)
-            ctx.fillColor = this._fillColor;
     },
 
     init: function (parent) {
@@ -484,12 +361,12 @@ var Path = cc.Class(makeTrasform({
         }
 
         if (this.dashArray.length > 0) {
-            if (this._fillColor) {
+            if (this._fillColor !== 'none') {
                 this.drawCommands();
                 this.ctx.fill();
             }
 
-            if (this._strokeColor) {
+            if (this._strokeColor !== 'none') {
                 this.ctx.beginPath();
                 drawDashPath(this, this.ctx, this.dashArray, this.dashOffset);    
                 this.ctx.stroke();
@@ -498,8 +375,8 @@ var Path = cc.Class(makeTrasform({
         else {
             this.drawCommands();
 
-            if (this._fillColor) this.ctx.fill();
-            if (this._strokeColor) this.ctx.stroke();
+            if (this._fillColor !== 'none') this.ctx.fill();
+            if (this._strokeColor !== 'none') this.ctx.stroke();
         }
 
         // var boundingBox = this.getBoundingBox();
@@ -510,7 +387,9 @@ var Path = cc.Class(makeTrasform({
 
         this._dirty = false;
     },
-}));
+};
+
+var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style));
 
 ['M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'C', 'c', 'S', 's', 'Q', 'q', 'T', 't', 'A', 'a', 'Z','z'].forEach(function (cmd) {
     Path.prototype[cmd] = function () {

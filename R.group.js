@@ -1,8 +1,10 @@
 var Path = require('./R.path');
 
-var makeTrasform = require('./R.transform');
+var Trasform = require('./R.transform');
+var Svg = require('./R.svg');
+var Style = require('./R.style');
 
-var Group = cc.Class(makeTrasform({
+var GroupDefine = {
     extends: cc.Component,
 
     properties: {
@@ -16,12 +18,17 @@ var Group = cc.Class(makeTrasform({
                     children[i].selected = selected;
                 }
             }
+        },
+
+        _dirty: {
+            default: true,
+            serializable: false
         }
     },
 
     // use this for initialization
     onLoad: function () {
-        this.children = [];
+        this.init();
 
         if (!this.ctx) {
             this.ctx = new _ccsg.GraphicsNode();
@@ -30,6 +37,8 @@ var Group = cc.Class(makeTrasform({
     },
 
     init: function (parent) {
+        this.children = [];
+
         if (parent) {
             this.parent = parent;
             this.ctx = parent.ctx;
@@ -41,6 +50,7 @@ var Group = cc.Class(makeTrasform({
         path.init(this);
 
         this.children.push(path);
+        this._dirty = true;
 
         return path;
     },
@@ -50,6 +60,7 @@ var Group = cc.Class(makeTrasform({
         group.init(this);
 
         this.children.push(group);
+        this._dirty = true;
 
         return group;
     },
@@ -60,14 +71,19 @@ var Group = cc.Class(makeTrasform({
 
         if (!this._dirty) return;
 
-        this.ctx.clear();
+        if (!this.parent) {
+            this.ctx.clear();
+        }
 
         var children = this.children;
         for (var i = 0, ii = children.length; i < ii; i++) {
             var child = children[i];
+            child._dirty = true;
             child.update(dt);
         }
 
         this._dirty = false;
     },
-}));
+};
+
+var Group = cc.Class(R.utils.defineClass(GroupDefine, Trasform, Svg, Style));
