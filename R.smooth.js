@@ -118,28 +118,11 @@ function getCubicBezierCurvePoints(points, firstControlPoints, secondControlPoin
 
 function getCubicBezierCurvePath(knots) {
     var firstControlPoints = [],
-        secondControlPoints = [],
-        path = [];
+        secondControlPoints = [];
 
     getCubicBezierCurvePoints(knots, firstControlPoints, secondControlPoints);
 
-    for (var i = 0, len = knots.length; i < len; i++) {
-        if (i === 0) {
-            path.push(['M', knots[i].x, knots[i].y]);
-        } else {
-            var firstControlPoint = firstControlPoints[i - 1],
-            secondControlPoint = secondControlPoints[i - 1];
-
-            path.push([
-                'C', 
-                firstControlPoint.x, firstControlPoint.y,
-                secondControlPoint.x, secondControlPoint.y,
-                knots[i].x, knots[i].y
-            ]);
-        }
-    }
-
-    return path;
+    return [firstControlPoints, secondControlPoints];
 }
 
 module.exports = {
@@ -156,7 +139,28 @@ module.exports = {
             }
         });
 
-        this._commands = getCubicBezierCurvePath( knots );
+        var results = getCubicBezierCurvePath( knots );
+        var firstControlPoints = results[0];
+        var secondControlPoints = results[1];
+        var commands = [];
+
+        for (var i = 0, len = knots.length; i < len; i++) {
+            if (i === 0) {
+                commands.push(['M', knots[i].x, knots[i].y]);
+            } else {
+                var firstControlPoint = firstControlPoints[i - 1],
+                secondControlPoint = secondControlPoints[i - 1];
+
+                commands.push([
+                    'C', 
+                    firstControlPoint.x, firstControlPoint.y,
+                    secondControlPoint.x, secondControlPoint.y,
+                    knots[i].x, knots[i].y
+                ]);
+            }
+        }
+
+        this._commands = commands;
         this._dirty = true;
     }
 };
