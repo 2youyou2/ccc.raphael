@@ -1,6 +1,6 @@
 'use strict';
 
-var getCubicBezierCurvePath = require('./R.smooth');
+var Smooth = require('./R.smooth');
 var path2curve = require('./R.curve').path2curve;
 
 var drawDashPath = require('./R.dash').drawDashPath;
@@ -17,10 +17,6 @@ var drawer = {
 };
 
 var selectedColor = cc.color(0,157,236);
-
-var GraphicsNode = _ccsg.GraphicsNode;
-var LineCap      = cc.Graphics.LineCap;
-var LineJoin     = cc.Graphics.LineJoin;
 
 var PathDefine = {
     extends: cc.Component,
@@ -57,7 +53,7 @@ var PathDefine = {
         this.init();
 
         if (!this.ctx) {
-            this.ctx = new GraphicsNode();
+            this.ctx = new _ccsg.GraphicsNode();
             this.node._sgNode.addChild(this.ctx);
 
             this.applyStyle();
@@ -172,24 +168,6 @@ var PathDefine = {
         }
 
         return this._commands.boundingBox;
-    },
-
-    ////////////////////////////////////////////////////////
-    smooth: function () {
-        var knots = [];
-        this._commands.forEach( function (cmd) {
-            var c = cmd[0];
-
-            if (c === 'M') {
-                knots.push( cc.p(cmd[1], cmd[2]) );
-            }
-            else if(c === 'C') {
-                knots.push( cc.p(cmd[5], cmd[6]) );
-            }
-        });
-
-        this._commands = getCubicBezierCurvePath( knots );
-        this._dirty = true;
     },
 
     ///////////////////
@@ -386,10 +364,10 @@ var PathDefine = {
         if ( this.selected ) this.drawHandles();
 
         this._dirty = false;
-    },
+    }
 };
 
-var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style));
+var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style, Smooth));
 
 ['M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'C', 'c', 'S', 's', 'Q', 'q', 'T', 't', 'A', 'a', 'Z','z'].forEach(function (cmd) {
     Path.prototype[cmd] = function () {

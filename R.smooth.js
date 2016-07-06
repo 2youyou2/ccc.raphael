@@ -142,4 +142,21 @@ function getCubicBezierCurvePath(knots) {
     return path;
 }
 
-module.exports = getCubicBezierCurvePath;
+module.exports = {
+    smooth: function () {
+        var knots = [];
+        this._commands.forEach( function (cmd) {
+            var c = cmd[0];
+
+            if (c === 'M') {
+                knots.push( cc.p(cmd[1], cmd[2]) );
+            }
+            else if(c === 'C') {
+                knots.push( cc.p(cmd[5], cmd[6]) );
+            }
+        });
+
+        this._commands = getCubicBezierCurvePath( knots );
+        this._dirty = true;
+    }
+};
