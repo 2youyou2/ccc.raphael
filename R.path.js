@@ -1,8 +1,10 @@
 'use strict';
 
 var Smooth = require('./R.smooth');
-var path2curve = require('./R.curve').path2curve;
+var Simplify = require('./R.simplify');
+var Animate = require('./R.animate');
 
+var path2curve = require('./R.curve').path2curve;
 var drawDashPath = require('./R.dash').drawDashPath;
 var analysisPath = require('./R.analysis').analysisPath;
 
@@ -47,6 +49,7 @@ var PathDefine = {
         this._dirty = true;
 
         this.selected = false;
+        this.showBoundingBox = false;
     },
 
     onLoad: function () {
@@ -171,7 +174,7 @@ var PathDefine = {
     },
 
     ///////////////////
-    transformCommand: function (cmd) {
+    _transformCommand: function (cmd) {
         
         var t = this._worldTransform;
 
@@ -202,14 +205,14 @@ var PathDefine = {
         return cmd;
     },
 
-    drawCommands: function () {
+    _drawCommands: function () {
         var commands = this._commands;
         var ctx = this.ctx;
 
         for (var i = 0, ii = commands.length; i < ii; i++) {
             var cmd = commands[i];
             var c = cmd[0];
-            cmd = this.transformCommand(cmd);
+            cmd = this._transformCommand(cmd);
 
             var func = ctx[ drawer[c] ];
 
@@ -217,7 +220,7 @@ var PathDefine = {
         }
     },
 
-    drawHandles: function () {
+    _drawHandles: function () {
         var ctx = this.ctx;
         var commands = this._commands;
 
@@ -244,7 +247,7 @@ var PathDefine = {
         for (var i = 0, ii = commands.length; i < ii; i++) {
             var cmd = commands[i];
             var c = cmd[0];
-            cmd = this.transformCommand(cmd);
+            cmd = this._transformCommand(cmd);
 
             if (c === 'M') {
                 prev = cmd;
@@ -264,65 +267,8 @@ var PathDefine = {
         ctx.fillColor   = originFillColor;
     },
 
-
-    ////////////////////////////////////////////////////
-    animate: function (pathString, pathString2, duration, animating) {
-        var pathes = path2curve(pathString, pathString2),
-            fromPath = pathes[0],
-            toPath = pathes[1];
-
-        var diff = [];
-        for (var i = 0, ii = fromPath.length; i < ii; i++) {
-            diff[i] = [0];
-            for (var j = 1, jj = fromPath[i].length; j < jj; j++) {
-                diff[i][j] = (toPath[i][j] - fromPath[i][j]) / duration;
-            }
-        }
-
-        this._time = 0;
-        this._duration = duration;
-
-        this._animateDiff = diff;
-        this._animating = typeof animating === 'undefined' ? true : animating;
-
-        this._fromPath = fromPath;
-        this._toPath = toPath;
-
-        return diff;
-    },
-
-    stepAnimate: function (time) {
-        var diff = this._animateDiff;
-        var duration = this._duration;
-        var fromPath = this._fromPath;
-
-        var pos = time / duration;
-
-        if (pos > 1) pos = 1;
-
-        var now = [];
-        for (var i = 0, ii = fromPath.length; i < ii; i++) {
-            now[i] = [fromPath[i][0]];
-            for (var j = 1, jj = fromPath[i].length; j < jj; j++) {
-                now[i][j] = +fromPath[i][j] + pos * duration * diff[i][j];
-            }
-        }
-
-        this._dirty = true;
-        this._commands = now;
-
-        if (pos >= 1) {
-            this._animating = false;
-            this._fromPath = null;
-            this._toPath = null;
-        }
-    },
-
     update: function (dt) {
-        if (this._animating) {
-            this._time += dt;
-            this.stepAnimate(this._time);
-        }
+        this._updateAnimate(dt);
 
         if (!this.parent) {
             this.updateTransform();
@@ -340,7 +286,7 @@ var PathDefine = {
 
         if (this.dashArray.length > 0) {
             if (this._fillColor !== 'none') {
-                this.drawCommands();
+                this._drawCommands();
                 this.ctx.fill();
             }
 
@@ -351,23 +297,25 @@ var PathDefine = {
             }
         }
         else {
-            this.drawCommands();
+            this._drawCommands();
 
             if (this._fillColor !== 'none') this.ctx.fill();
             if (this._strokeColor !== 'none') this.ctx.stroke();
         }
 
-        // var boundingBox = this.getBoundingBox();
-        // this.ctx.rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
-        // this.ctx.stroke();
+        if (this.showBoundingBox) {
+            var boundingBox = this.getBoundingBox();
+            this.ctx.rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+            this.ctx.stroke();
+        }
 
-        if ( this.selected ) this.drawHandles();
+        if ( this.selected ) this._drawHandles();
 
         this._dirty = false;
     }
 };
 
-var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style, Smooth));
+var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style, Smooth, Simplify, Animate));
 
 ['M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'C', 'c', 'S', 's', 'Q', 'q', 'T', 't', 'A', 'a', 'Z','z'].forEach(function (cmd) {
     Path.prototype[cmd] = function () {

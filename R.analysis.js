@@ -55,7 +55,7 @@ function analysisPath (path) {
         var cmd = cmds[i];
         var c = cmd[0];
 
-        cmd = path.transformCommand(cmd);
+        cmd = path._transformCommand(cmd);
         
         if (c === 'M') {
             subPoints = [];
