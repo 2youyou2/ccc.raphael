@@ -1,9 +1,6 @@
-
-var analysisPath = require('./R.analysis').analysisPath;
-
 var sqrt = Math.sqrt;
 
-function drawDashPoints (points, ctx, dashArray, dashOffset) {
+function drawDashPoints (points, ctx, dashArray, dashOffset, transform) {
     var lastx = points[0], 
         lasty = points[1];
 
@@ -53,7 +50,13 @@ function drawDashPoints (points, ctx, dashArray, dashOffset) {
                     x1 = x1 + p * (x - x1);
                     y1 = y1 + p * (y - y1);
 
-                    ctx.moveTo(x1, y1);
+                    if (transform) {
+                        var p = cc.pointApplyAffineTransform(x1, y1, transform);
+                        ctx.moveTo(p.x, p.y);    
+                    }
+                    else {
+                        ctx.moveTo(x1, y1);
+                    }
 
                     length -= difLength;
                     totalLength += difLength;
@@ -63,7 +66,13 @@ function drawDashPoints (points, ctx, dashArray, dashOffset) {
                     x1 = x;
                     y1 = y;
 
-                    ctx.lineTo(x, y);
+                    if (transform) {
+                        var p = cc.pointApplyAffineTransform(x1, y1, transform);
+                        ctx.lineTo(p.x, p.y);    
+                    }
+                    else {
+                        ctx.lineTo(x1, y1);
+                    }
 
                     totalLength += length;
                     length = 0;
@@ -75,7 +84,13 @@ function drawDashPoints (points, ctx, dashArray, dashOffset) {
                     x1 = x1 + p * (x - x1);
                     y1 = y1 + p * (y - y1);
 
-                    ctx.lineTo(x1, y1);
+                    if (transform) {
+                        var p = cc.pointApplyAffineTransform(x1, y1, transform);
+                        ctx.lineTo(p.x, p.y);    
+                    }
+                    else {
+                        ctx.lineTo(x1, y1);
+                    }
 
                     length -= difLength;
                     totalLength += difLength;
@@ -91,29 +106,6 @@ function drawDashPoints (points, ctx, dashArray, dashOffset) {
     }   
 }
 
-function drawDashPath (path) {
-    var cmds = path._commands;
-    var ctx = path.ctx;
-    var dashArray = path.dashArray;
-    var dashOffset = path.dashOffset;
-
-    var points;
-
-    if (!cmds.points) {
-        analysisPath(path);
-    }
-
-    points = cmds.points;
-
-    for (var i = 0, ii = points.length / 2; i < ii; i++) {
-        var subPoints = points[i];
-
-        drawDashPoints(subPoints, ctx, dashArray, dashOffset);
-    }
-}
-
-
 module.exports = {
-    drawDashPath: drawDashPath
+    drawDashPoints: drawDashPoints
 };
-

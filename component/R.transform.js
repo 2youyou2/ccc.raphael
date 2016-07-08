@@ -105,6 +105,84 @@ var Transform = {
         },
     },
 
+    _transformCommand: function (cmd, t) {
+        var c = cmd[0];
+        cmd = cmd.slice(1, cmd.length);
+
+        if (t.a === 1 && t.d === 1 &&
+            t.b === 0 && t.c === 0 &&
+            t.tx === 0 && t.ty === 0) {
+            return cmd;
+        }
+
+        var tempPoint = cc.v2();
+
+        if (c === 'M' || c === 'L' || c === 'C') {
+            for (var i = 0, ii = cmd.length / 2; i < ii; i++) {
+                var j = i*2;
+                tempPoint.x = cmd[j];
+                tempPoint.y = cmd[j + 1];
+
+                tempPoint = cc.pointApplyAffineTransform(tempPoint, t);
+
+                cmd[j] = tempPoint.x;
+                cmd[j+1] = tempPoint.y;
+            }
+        }
+
+        return cmd;
+    },
+
+    getTransform: function () {
+        if (this._transformDirty) {
+            var scaleX = this.flipX ? -this._scale.x : this._scale.x;
+            var scaleY = this.flipY ? -this._scale.y : this._scale.y;
+            var positionX = this._position.x;
+            var positionY = this._position.y;
+            var rotation = this._rotation;
+
+            var t = this._transform;
+            t.tx = positionX;
+            t.ty = positionY;
+            t.a = t.d = 1;
+            t.b = t.c = 0;
+
+            // rotation Cos and Sin
+            if (rotation) {
+                var rotationRadians = rotation * 0.017453292519943295;  //0.017453292519943295 = (Math.PI / 180);   for performance
+                t.c = Math.sin(rotationRadians);
+                t.d = Math.cos(rotationRadians);
+                t.a = t.d;
+                t.b = -t.c;
+            }
+
+            // Firefox on Vista and XP crashes
+            // GPU thread in case of scale(0.0, 0.0)
+            var sx = (scaleX < 0.000001 && scaleX > -0.000001) ? 0.000001 : scaleX,
+                sy = (scaleY < 0.000001 && scaleY > -0.000001) ? 0.000001 : scaleY;
+
+            // scale
+            if (scaleX !== 1 || scaleY !== 1) {
+                t.a *= sx;
+                t.b *= sx;
+                t.c *= sy;
+                t.d *= sy;
+            }
+
+            this._transformDirty = false;
+        }
+
+        return this._transform;
+    },
+
+    getWorldTransform: function () {
+        if (this.parent) {
+            return cc.affineTransformConcat(this.parent.getWorldTransform(), this.getTransform());
+        }
+
+        return this.getTransform();
+    },
+
     updateTransform: function (parentTransformDirty) {
         if (this._transformDirty || parentTransformDirty) {
             var scaleX = this.flipX ? -this._scale.x : this._scale.x;

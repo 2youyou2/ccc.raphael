@@ -1,10 +1,8 @@
-var path2curve = require('./R.curve').path2curve;
-
 module.exports = {
 
     ////////////////////////////////////////////////////
     animate: function (pathString, pathString2, duration, animating) {
-        var pathes = path2curve(pathString, pathString2),
+        var pathes = R.utils.path2curve(pathString, pathString2),
             fromPath = pathes[0],
             toPath = pathes[1];
 

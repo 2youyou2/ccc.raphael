@@ -126,7 +126,7 @@ var Style = {
         return value;
     },
 
-    applyStyle: function () {
+    _applyStyle: function () {
         var ctx = this.ctx;
         ctx.lineWidth = this.getStyled('lineWidth');
         ctx.lineJoin = this.getStyled('lineJoin');

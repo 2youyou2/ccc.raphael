@@ -1,4 +1,3 @@
-
 module.exports = {
     defineClass: function () {
         var defines = {
@@ -15,5 +14,9 @@ module.exports = {
         }
 
         return defines;
-    }
+    },
+
+    tesselateBezier: require('./R.tesselateBezier'),
+    path2curve: require('R.curve').path2curve,
+    drawDashPoints: require('R.dash').drawDashPoints
 };

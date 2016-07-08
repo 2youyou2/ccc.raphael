@@ -1,15 +1,10 @@
 'use strict';
 
-var Smooth = require('./R.smooth');
-var Simplify = require('./R.simplify');
-var Animate = require('./R.animate');
-
-var path2curve = require('./R.curve').path2curve;
-var drawDashPath = require('./R.dash').drawDashPath;
-var analysisPath = require('./R.analysis').analysisPath;
-
-var Trasform = require('./R.transform');
-var Style = require('./R.style');
+var Smooth      = require('./component/R.smooth');
+var Simplify    = require('./component/R.simplify');
+var Animate     = require('./component/R.animate');
+var Trasform    = require('./component/R.transform');
+var Style       = require('./component/R.style');
 
 var drawer = {
     M: 'moveTo',
@@ -18,7 +13,10 @@ var drawer = {
     Z: 'close',
 };
 
+var sqrt = Math.sqrt;
+
 var selectedColor = cc.color(0,157,236);
+
 
 var PathDefine = {
     extends: cc.Component,
@@ -48,7 +46,7 @@ var PathDefine = {
         this._commands = [];
         this._dirty = true;
 
-        this.selected = false;
+        this.showHandles = false;
         this.showBoundingBox = false;
     },
 
@@ -59,7 +57,7 @@ var PathDefine = {
             this.ctx = new _ccsg.GraphicsNode();
             this.node._sgNode.addChild(this.ctx);
 
-            this.applyStyle();
+            this._applyStyle();
         }
     },
 
@@ -133,12 +131,12 @@ var PathDefine = {
     },
 
     makePath: function () {
-        this._commands = path2curve(this._commands);
+        this._commands = R.utils.path2curve(this._commands);
         this._dirty = true;
     },
 
     path: function (path) {
-        this._commands = path2curve(path);
+        this._commands = R.utils.path2curve(path);
         this._dirty = true;
     },
 
@@ -159,60 +157,127 @@ var PathDefine = {
 
     getTotalLength: function () {
         if (this._commands.totalLength === undefined) {
-            analysisPath(this);
+            this._analysis();
         }
 
         return this._commands.totalLength;
     },
 
-    getBoundingBox: function () {
-        if (this._commands.boundingBox === undefined) {
-            analysisPath(this);
+    getBbox: function () {
+        if (this._commands.bbox === undefined) {
+            this._analysis();
         }
 
-        return this._commands.boundingBox;
+        return this._commands.bbox;
     },
 
-    ///////////////////
-    _transformCommand: function (cmd) {
-        
-        var t = this._worldTransform;
-
-        var c = cmd[0];
-        cmd = cmd.slice(1, cmd.length);
-
-        if (t.a === 1 && t.d === 1 &&
-            t.b === 0 && t.c === 0 &&
-            t.tx === 0 && t.ty === 0) {
-            return cmd;
+    getWorldBbox: function () {
+        if (this._commands.worldBbox === undefined || this._transformDirty) {
+            this._analysis();
         }
 
-        var tempPoint = cc.v2();
+        return this._commands.worldBbox;
+    },
 
-        if (c === 'M' || c === 'L' || c === 'C') {
-            for (var i = 0, ii = cmd.length / 2; i < ii; i++) {
-                var j = i*2;
-                tempPoint.x = cmd[j];
-                tempPoint.y = cmd[j + 1];
+    center: function (x, y) {
+        x = x || 0;
+        y = y || 0;
+        
+        var bbox = this.getBbox();
+        this.position = this.position.add(cc.p(-bbox.width/2 - bbox.x + x, -bbox.height/2 - bbox.y + y));
+    },
 
-                tempPoint = cc.pointApplyAffineTransform(tempPoint, t);
+    _analysis: function () {
+        var cmds = this._commands;
+        var x, y;
+        var subPoints;
 
-                cmd[j] = tempPoint.x;
-                cmd[j+1] = tempPoint.y;
+        if (cmds.points) {
+            return;
+        }
+        
+        var points = [];
+
+        for (var i = 0, ii = cmds.length; i < ii; i++) {
+            var cmd = cmds[i];
+            var c = cmd[0];
+            
+            if (c === 'M') {
+                subPoints = [];
+                points.push(subPoints);
+
+                x = cmd[1];
+                y = cmd[2];
+
+                subPoints.push(x);
+                subPoints.push(y);
+            }
+            else if (c === 'C' && x !== undefined && y !== undefined) {
+                R.utils.tesselateBezier(x, y, cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], 0, subPoints);
+
+                x = cmd[5];
+                y = cmd[6];
             }
         }
 
-        return cmd;
+        cmds.points = points;
+
+        var totalLength = 0;
+        var lastx, lasty;
+        var dx, dy;
+        var minx = 10e7, miny = 10e7, 
+            maxx = -10e7, maxy = -10e7;
+
+        for (var i = 0, ii = points.length / 2; i < ii; i++) {
+            subPoints = points[i];
+
+            for (var j = 0, jj = subPoints.length / 2; j < jj; j++) {
+                x = subPoints[j*2];
+                y = subPoints[j*2 + 1];
+
+                if (x < minx) minx = x;
+                if (x > maxx) maxx = x;
+
+                if (y < miny) miny = y;
+                if (y > maxy) maxy = y;
+
+                if (j === 0) {
+                    lastx = x;
+                    lasty = y;
+                }
+
+                dx = x - lastx;
+                dy = y - lasty;
+
+                totalLength += sqrt(dx*dx + dy*dy);
+
+                lastx = x;
+                lasty = y;
+            }
+        }
+
+        cmds.totalLength = totalLength;
+
+        if (totalLength === 0) {
+            cmds.bbox = cmds.worldBbox = cc.rect();
+        }
+        else {
+            var rect = cc.rect(minx, miny, maxx - minx, maxy - miny);
+            cmds.bbox = cc.rectApplyAffineTransform(rect, this.getTransform());
+            cmds.worldBbox = cc.rectApplyAffineTransform(rect, this.getWorldTransform());
+        }
     },
 
+    //////////////////////////////////////
     _drawCommands: function () {
         var commands = this._commands;
         var ctx = this.ctx;
+        var t = this.getWorldTransform();
 
         for (var i = 0, ii = commands.length; i < ii; i++) {
             var cmd = commands[i];
             var c = cmd[0];
-            cmd = this._transformCommand(cmd);
+            cmd = this._transformCommand(cmd, t);
 
             var func = ctx[ drawer[c] ];
 
@@ -236,6 +301,8 @@ var PathDefine = {
         ctx.strokeColor = selectedColor;
         ctx.fillColor = selectedColor;
 
+        var t = this.getWorldTransform();
+
         function drawHandle(x1, y1, x2, y2) {
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
@@ -247,7 +314,7 @@ var PathDefine = {
         for (var i = 0, ii = commands.length; i < ii; i++) {
             var cmd = commands[i];
             var c = cmd[0];
-            cmd = this._transformCommand(cmd);
+            cmd = this._transformCommand(cmd, t);
 
             if (c === 'M') {
                 prev = cmd;
@@ -267,18 +334,37 @@ var PathDefine = {
         ctx.fillColor   = originFillColor;
     },
 
+    _drawDashPath: function () {
+        var cmds = this._commands;
+        var ctx = this.ctx;
+        var dashArray = this.dashArray;
+        var dashOffset = this.dashOffset;
+
+        var points;
+
+        if (!cmds.points) {
+            this._analysis();
+        }
+
+        points = cmds.points;
+
+        var t = this.getWorldTransform();
+        for (var i = 0, ii = points.length / 2; i < ii; i++) {
+            var subPoints = points[i];
+
+            R.utils.drawDashPoints(subPoints, ctx, dashArray, dashOffset, t);
+        }
+    },
+
+    //////////////////////////////////////
     update: function (dt) {
         this._updateAnimate(dt);
-
-        if (!this.parent) {
-            this.updateTransform();
-        }
         
         if ( this._commands.length === 0 || !this._dirty || (this.parent && !this.parent._dirty)) {
             return;
         }
 
-        this.applyStyle();
+        this._applyStyle();
 
         if (!this.parent) {
             this.ctx.clear();
@@ -292,7 +378,7 @@ var PathDefine = {
 
             if (this._strokeColor !== 'none') {
                 this.ctx.beginPath();
-                drawDashPath(this, this.ctx, this.dashArray, this.dashOffset);    
+                this._drawDashPath();
                 this.ctx.stroke();
             }
         }
@@ -304,12 +390,12 @@ var PathDefine = {
         }
 
         if (this.showBoundingBox) {
-            var boundingBox = this.getBoundingBox();
-            this.ctx.rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+            var bbox = this.getWorldBbox();
+            this.ctx.rect(bbox.x, bbox.y, bbox.width, bbox.height);
             this.ctx.stroke();
         }
 
-        if ( this.selected ) this._drawHandles();
+        if ( this.showHandles ) this._drawHandles();
 
         this._dirty = false;
     }

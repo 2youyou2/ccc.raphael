@@ -1,8 +1,8 @@
 var Path = require('./R.path');
 
-var Trasform = require('./R.transform');
-var Svg = require('./R.svg');
-var Style = require('./R.style');
+var Trasform    = require('./component/R.transform');
+var Svg         = require('./component/R.svg');
+var Style       = require('./component/R.style');
 
 var GroupDefine = {
     extends: cc.Component,
@@ -67,16 +67,20 @@ var GroupDefine = {
         return group;
     },
 
-    getBoundingBox: function () {
+    getWorldBbox: function () {
         var rect;
         var children = this.children;
         for (var i = 0, ii = children.length; i < ii; i++) {
-            if (!rect) {
-                rect = children[i].getBoundingBox();
-                continue;
+            var bbox = children[i].getWorldBbox();
+            
+            if (bbox.width !== 0 && bbox.height !== 0) {
+                if (!rect) {
+                    rect = children[i].getWorldBbox();
+                }
+                else {
+                    rect = cc.rectUnion(rect, children[i].getWorldBbox());    
+                }
             }
-
-            rect = cc.rectUnion(rect, children[i].getBoundingBox());
         }
 
         return rect || cc.rect();
@@ -84,7 +88,6 @@ var GroupDefine = {
 
     // called every frame, uncomment this function to activate update callback
     update: function (dt) {
-        this.updateTransform();
 
         if (!this._dirty) return;
 
@@ -100,8 +103,8 @@ var GroupDefine = {
         }
 
         if (this.showBoundingBox) {
-            var boundingBox = this.getBoundingBox();
-            this.ctx.rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+            var bbox = this.getWorldBbox();
+            this.ctx.rect(bbox.x, bbox.y, bbox.width, bbox.height);
             this.ctx.stroke();
         }
 
