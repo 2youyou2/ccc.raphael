@@ -109,9 +109,6 @@ var Style = {
             if (this.parent) value = this.parent.getStyled(type);
             else value = this[type];
         }
-        else if (value === 'none' || !value) {
-            value = null;
-        }
 
         return value;
     },
@@ -119,7 +116,10 @@ var Style = {
     getStyledColor: function (type) {
         var value = this.getStyled(type);
 
-        if (typeof value === 'string') {
+        if (value === 'none' || !value) {
+            value = null;
+        }
+        else if (typeof value === 'string') {
             value = cc.hexToColor(value);
         }
 

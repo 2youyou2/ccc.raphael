@@ -228,7 +228,7 @@ var PathDefine = {
         var minx = 10e7, miny = 10e7, 
             maxx = -10e7, maxy = -10e7;
 
-        for (var i = 0, ii = points.length / 2; i < ii; i++) {
+        for (var i = 0, ii = points.length; i < ii; i++) {
             subPoints = points[i];
 
             for (var j = 0, jj = subPoints.length / 2; j < jj; j++) {
@@ -348,8 +348,7 @@ var PathDefine = {
 
         points = cmds.points;
 
-        var t = this.getWorldTransform();
-        for (var i = 0, ii = points.length / 2; i < ii; i++) {
+        for (var i = 0, ii = points.length; i < ii; i++) {
             var subPoints = points[i];
 
             R.utils.drawDashPoints(subPoints, ctx, dashArray, dashOffset, t);
