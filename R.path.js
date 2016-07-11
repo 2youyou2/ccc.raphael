@@ -371,12 +371,12 @@ var PathDefine = {
         }
 
         if (this.dashArray.length > 0) {
-            if (this._fillColor !== 'none') {
+            if (this.getStyledColor('fillColor')) {
                 this._drawCommands();
                 this.ctx.fill();
             }
 
-            if (this._strokeColor !== 'none') {
+            if (this.getStyledColor('strokeColor')) {
                 this.ctx.beginPath();
                 this._drawDashPath();
                 this.ctx.stroke();
@@ -385,8 +385,8 @@ var PathDefine = {
         else {
             this._drawCommands();
 
-            if (this._fillColor !== 'none') this.ctx.fill();
-            if (this._strokeColor !== 'none') this.ctx.stroke();
+            if (this.getStyledColor('fillColor')) this.ctx.fill();
+            if (this.getStyledColor('strokeColor')) this.ctx.stroke();
         }
 
         if (this.showBoundingBox) {

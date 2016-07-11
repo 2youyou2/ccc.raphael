@@ -105,12 +105,12 @@ var Style = {
     getStyled: function (type) {
         var value = this['_' + type];
         
-        if (value === 'none') {
-            value = null;
-        }
-        else if (value === 'inherit' || !value) {
+        if (value === 'inherit' || value === undefined) {
             if (this.parent) value = this.parent.getStyled(type);
             else value = this[type];
+        }
+        else if (value === 'none' || !value) {
+            value = null;
         }
 
         return value;
