@@ -3,7 +3,9 @@ var tessTol = 0.25;
 
 var abs = Math.abs;
 
-function tesselateBezier (x1, y1, x2, y2, x3, y3, x4, y4, level, points) {
+function tesselateBezier (x1, y1, x2, y2, x3, y3, x4, y4, level, points, tessTolSclae) {
+    tessTolSclae = tessTolSclae || 1;
+
     var x12, y12, x23, y23, x34, y34, x123, y123, x234, y234, x1234, y1234;
     var dx, dy, d2, d3;
 
@@ -23,7 +25,7 @@ function tesselateBezier (x1, y1, x2, y2, x3, y3, x4, y4, level, points) {
     d2 = abs((x2 - x4) * dy - (y2 - y4) * dx);
     d3 = abs((x3 - x4) * dy - (y3 - y4) * dx);
 
-    if ((d2 + d3) * (d2 + d3) < tessTol * (dx * dx + dy * dy)) {
+    if ((d2 + d3) * (d2 + d3) < tessTol * tessTolSclae * (dx * dx + dy * dy)) {
         points.push(x4);
         points.push(y4);
         return;
@@ -34,8 +36,8 @@ function tesselateBezier (x1, y1, x2, y2, x3, y3, x4, y4, level, points) {
     x1234 = (x123 + x234) * 0.5;
     y1234 = (y123 + y234) * 0.5;
 
-    tesselateBezier(x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1, points);
-    tesselateBezier(x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, points);
+    tesselateBezier(x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1, points, tessTolSclae);
+    tesselateBezier(x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, points, tessTolSclae);
 }
 
 module.exports = tesselateBezier;

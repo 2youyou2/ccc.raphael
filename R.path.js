@@ -14,6 +14,8 @@ var drawer = {
 };
 
 var sqrt = Math.sqrt;
+var max  = Math.max;
+var abs  = Math.abs;
 
 var selectedColor = cc.color(0,157,236);
 
@@ -28,10 +30,10 @@ var PathDefine = {
             notify: function () {
                 if (this.parent && this._dirty) {
                     this.parent._dirty = true;
-                }
-
-                if (this._commands) {
-                    this._commands.points = undefined;
+                    
+                    if (this._commands) {
+                        this._commands.points = undefined;
+                    }
                 }
             }
         }
@@ -187,36 +189,58 @@ var PathDefine = {
         this.position = this.position.add(cc.p(-bbox.width/2 - bbox.x + x, -bbox.height/2 - bbox.y + y));
     },
 
-    _analysis: function () {
+    _curves: function () {
         var cmds = this._commands;
-        var x, y;
-        var subPoints;
+        if (cmds.curves) return cmds.curves;
 
-        if (cmds.points) {
-            return;
-        }
-        
-        var points = [];
+        var curves = [];
+        var subCurves;
+        var x, y;
 
         for (var i = 0, ii = cmds.length; i < ii; i++) {
             var cmd = cmds[i];
             var c = cmd[0];
             
             if (c === 'M') {
-                subPoints = [];
-                points.push(subPoints);
+                subCurves = [];
+                curves.push(subCurves);
 
                 x = cmd[1];
                 y = cmd[2];
-
-                subPoints.push(x);
-                subPoints.push(y);
             }
             else if (c === 'C' && x !== undefined && y !== undefined) {
-                R.utils.tesselateBezier(x, y, cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], 0, subPoints);
+                subCurves.push([x, y, cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]]);
 
                 x = cmd[5];
                 y = cmd[6];
+            }
+        }
+
+        cmds.curves = curves;
+        return curves;
+    },
+
+    _analysis: function () {
+        var cmds = this._commands;
+        if (cmds.points) {
+            return;
+        }
+
+        var curves = this._curves();
+
+        var points = [];
+        var x, y;
+        var subPoints;
+        var tessTolSclae = 1/max(abs(this.scale.x), abs(this.scale.y));
+
+        for (var i = 0, ii = curves.length; i < ii; i++) {
+            var subCurves = curves[i];
+            subPoints = [];
+            points.push(subPoints);
+
+            for (var j = 0, jj = subCurves.length; j < jj; j++) {
+                var curve = subCurves[j];
+                R.utils.tesselateBezier(curve[0], curve[1], curve[2], curve[3], curve[4], curve[5], curve[6], curve[7], 0, subPoints, tessTolSclae);
             }
         }
 
@@ -348,6 +372,7 @@ var PathDefine = {
 
         points = cmds.points;
 
+        var t = this.getWorldTransform();
         for (var i = 0, ii = points.length; i < ii; i++) {
             var subPoints = points[i];
 

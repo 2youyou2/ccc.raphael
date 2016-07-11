@@ -106,7 +106,10 @@ var Transform = {
     },
 
     _transformCommand: function (cmd, t) {
-        var c = cmd[0];
+        if (cmd.length <= 1) {
+            return cmd;
+        }
+        
         cmd = cmd.slice(1, cmd.length);
 
         if (t.a === 1 && t.d === 1 &&
@@ -117,17 +120,15 @@ var Transform = {
 
         var tempPoint = cc.v2();
 
-        if (c === 'M' || c === 'L' || c === 'C') {
-            for (var i = 0, ii = cmd.length / 2; i < ii; i++) {
-                var j = i*2;
-                tempPoint.x = cmd[j];
-                tempPoint.y = cmd[j + 1];
+        for (var i = 0, ii = cmd.length / 2; i < ii; i++) {
+            var j = i*2;
+            tempPoint.x = cmd[j];
+            tempPoint.y = cmd[j + 1];
 
-                tempPoint = cc.pointApplyAffineTransform(tempPoint, t);
+            tempPoint = cc.pointApplyAffineTransform(tempPoint, t);
 
-                cmd[j] = tempPoint.x;
-                cmd[j+1] = tempPoint.y;
-            }
+            cmd[j] = tempPoint.x;
+            cmd[j+1] = tempPoint.y;
         }
 
         return cmd;
