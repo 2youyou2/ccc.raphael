@@ -1,3 +1,19 @@
+function mixin (dst, src, addon) {
+    for (let key in src) {
+        if (!addon || (addon && !dst[key])) {
+            if (typeof src[key] === 'object') {
+                dst[key] = {};
+                for (let subKey in src[key]) {
+                    dst[key][subKey] = src[key][subKey];
+                }
+            }
+            else {
+                dst[key] = src[key];
+            }
+        }
+    }
+}
+
 module.exports = {
     defineClass: function () {
         var defines = {
@@ -8,9 +24,9 @@ module.exports = {
         for (var i = 0, ii = arguments.length; i < ii; i++) {
             var d = arguments[i];
 
-            cc.js.mixin(defines.properties, d.properties);
-            cc.js.mixin(defines.statics, d.statics);
-            cc.js.addon(defines, d);
+            mixin(defines.properties, d.properties);
+            mixin(defines.statics, d.statics);
+            mixin(defines, d, true);
         }
 
         return defines;
