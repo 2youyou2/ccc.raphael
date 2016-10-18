@@ -48,7 +48,7 @@ var Style = {
 
         strokeColor: {
             get: function () {
-                return this._strokeColor || cc.Color.BLACK;
+                return this._strokeColor;// || cc.Color.BLACK;
             },
             set: function (value) {
                 this._strokeColor = value;
