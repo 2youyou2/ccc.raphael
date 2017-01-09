@@ -2,8 +2,14 @@
 var Transform = {
 
     properties: {
-        _scale: cc.v2(1, 1),
-        _position: cc.v2(0,0),
+        _scale: {
+            default: cc.v2(1, 1),
+            type: cc.Vec2
+        },
+        _position: {
+            default: cc.v2(0,0),
+            type: cc.Vec2
+        },
         _rotation: 0,
         
         _flipX: false,

@@ -1,10 +1,13 @@
 'use strict';
 
-var Smooth      = require('./component/R.smooth');
-var Simplify    = require('./component/R.simplify');
-var Animate     = require('./component/R.animate');
-var Trasform    = require('./component/R.transform');
-var Style       = require('./component/R.style');
+var trasform = require('./component/R.transform');
+var style = require('./component/R.style');
+var utils = require('./utils/R.utils');
+
+// optional
+var smooth = require('./component/optional/R.smooth');
+var simplify = require('./component/optional/R.simplify');
+var animate = require('./component/optional/R.animate');
 
 var drawer = {
     M: 'moveTo',
@@ -382,7 +385,9 @@ var PathDefine = {
 
     //////////////////////////////////////
     update: function (dt) {
-        this._updateAnimate(dt);
+        if (this._updateAnimate) {
+            this._updateAnimate(dt);
+        }
         
         if ( this._commands.length === 0 || !this._dirty || (this.parent && !this.parent._dirty)) {
             return;
@@ -425,7 +430,7 @@ var PathDefine = {
     }
 };
 
-var Path = cc.Class(R.utils.defineClass(PathDefine, Trasform, Style, Smooth, Simplify, Animate));
+var Path = cc.Class(utils.defineClass(PathDefine, trasform, style, smooth, simplify, animate));
 
 ['M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'C', 'c', 'S', 's', 'Q', 'q', 'T', 't', 'A', 'a', 'Z','z'].forEach(function (cmd) {
     Path.prototype[cmd] = function () {

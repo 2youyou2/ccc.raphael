@@ -1,6 +1,6 @@
 
 var path2curve = require('./R.curve').path2curve;
-var findDotsAtSegment = require('R.intersection').findDotsAtSegment;
+var findDotsAtSegment = require('./R.find').findDotsAtSegment;
 
 function base3(t, p1, p2, p3, p4) {
     var t1 = -3 * p1 + 9 * p2 - 9 * p3 + 3 * p4,
