@@ -16,6 +16,26 @@ function toNumberArray (s) {
     return a;
 }
 
+function parseStyle (current, name, value) {
+    if (name === 'fill') {
+        current.fillColor = value === 'none' ? null : cc.hexToColor(value);
+    } else if (name === 'stroke') {
+        current.strokeColor = value === 'none' ? null : cc.hexToColor(value);
+    } else if (name === 'stroke-width') {
+        current.lineWidth = parseFloat(value);
+    } else if (name === 'stroke-linejoin') {
+        current.lineJoin = cc.Graphics.LineJoin[value.toUpperCase()];
+    } else if (name === 'stroke-linecap') {
+        current.lineCap = cc.Graphics.LineCap[value.toUpperCase()];
+    } else if (name === 'stroke-dasharray') {
+        current.dashArray = toNumberArray[value];
+    } else if (name === 'stroke-dashoffset') {
+        current.dashOffset = parseFloat(value);
+    } /* else {
+        cc.log("Unhandled style: " + name + " -- " + value);
+    } */
+}
+
 function parseNode (node, parent) {
     var current;
 
@@ -59,28 +79,14 @@ function parseNode (node, parent) {
                     var name = trim(style[0]);
                     var value = trim(style[1]);
 
-                    if (name === 'fill') {
-                        current.fillColor = value === 'none' ? null : cc.hexToColor(value);
-                    }
-                    else if (name === 'stroke') {
-                        current.strokeColor = value === 'none' ? null : cc.hexToColor(value);
-                    }
-                    else if (name === 'stroke-width') {
-                        current.lineWidth = parseFloat(value);
-                    }
-                    else if (name === 'stroke-linejoin') {
-                        current.lineJoin = cc.Graphics.LineJoin[value.toUpperCase()];
-                    }
-                    else if (name === 'stroke-linecap') {
-                        current.lineCap = cc.Graphics.LineCap[value.toUpperCase()];
-                    }
-                    else if (name === 'stroke-dasharray') {
-                        current.dashArray = toNumberArray[value];
-                    }
-                    else if (name === 'stroke-dashoffset') {
-                        current.dashOffset = parseFloat(value);
-                    }
+                    parseStyle(current, name, value);
                 }
+            }
+        }
+
+        for (var property in node.attribs) {
+            if (node.attribs.hasOwnProperty(property)) {
+                parseStyle(current, property, node.attribs[property]);
             }
         }
     }

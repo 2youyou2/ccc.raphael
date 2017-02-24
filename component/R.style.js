@@ -58,7 +58,7 @@ var Style = {
 
         fillColor: {
             get: function () {
-                return this._fillColor || cc.Color.WHITE;
+                return this._fillColor; // || cc.Color.WHITE;
             },
             set: function (value) {
                 this._fillColor = value;
